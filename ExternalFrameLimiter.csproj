@@ -3,10 +3,10 @@
     <TargetFramework>net481</TargetFramework>
     <OutputType>WinExe</OutputType>
     <LangVersion>latest</LangVersion>
-    <RootNamespace>GtaSaFpsLock</RootNamespace>
+    <RootNamespace>ExternalFrameLimiter</RootNamespace>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
-    <AssemblyTitle>GTA SA FPS Lock</AssemblyTitle>
-    <Product>GTA SA FPS Lock</Product>
+    <AssemblyTitle>External Frame Limiter</AssemblyTitle>
+    <Product>External Frame Limiter</Product>
     <Version>1.0.0</Version>
   </PropertyGroup>
   <ItemGroup>

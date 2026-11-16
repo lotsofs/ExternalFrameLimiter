@@ -2,18 +2,18 @@ using System;
 using System.Threading;
 using System.Windows.Forms;
 
-namespace GtaSaFpsLock
+namespace ExternalFrameLimiter
 {
 	static class Program
 	{
 		[STAThread]
 		static void Main()
 		{
-			using (var mutex = new Mutex(true, "GtaSaFpsLock-single-instance", out bool first))
+			using (var mutex = new Mutex(true, "ExternalFrameLimiter-single-instance", out bool first))
 			{
 				if (!first)
 				{
-					MessageBox.Show("GTA SA FPS Lock is already running.", "GTA SA FPS Lock", MessageBoxButtons.OK, MessageBoxIcon.Information);
+					MessageBox.Show("External Frame Limiter is already running.", "External Frame Limiter", MessageBoxButtons.OK, MessageBoxIcon.Information);
 					return;
 				}
 				Application.EnableVisualStyles();

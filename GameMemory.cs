@@ -3,7 +3,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Runtime.InteropServices;
 
-namespace GtaSaFpsLock
+namespace ExternalFrameLimiter
 {
 	enum GameStatus { Waiting, NoAccess, Unsupported, Found }
 

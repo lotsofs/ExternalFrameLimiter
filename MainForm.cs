@@ -3,7 +3,7 @@ using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
-namespace GtaSaFpsLock
+namespace ExternalFrameLimiter
 {
 	/// <summary>The window: the game's status, the target and the measured frame rate. Everything here runs on the UI thread.</summary>
 	sealed class MainForm : Form
@@ -54,7 +54,7 @@ namespace GtaSaFpsLock
 
 		public MainForm()
 		{
-			Text = "GTA SA FPS Lock";
+			Text = "External Frame Limiter";
 			FormBorderStyle = FormBorderStyle.FixedSingle;
 			MaximizeBox = false;
 			StartPosition = FormStartPosition.CenterScreen;

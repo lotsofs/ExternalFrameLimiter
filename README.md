@@ -1,4 +1,4 @@
-# GTA SA FPS Lock
+# External Frame Limiter
 
 A small Windows tool that caps GTA San Andreas (PC 1.0) at an even 30, 60 or 120 FPS, switched with global hotkeys.
 
@@ -37,7 +37,7 @@ If the tool is killed instead of closed, the changes stay until the game is rest
 ## Build
 
 ```sh
-dotnet build GtaSaFpsLock.csproj -c Release
+dotnet build ExternalFrameLimiter.csproj -c Release
 ```
 
-This needs the .NET Framework 4.8.1 targeting pack. The output is `bin\Release\GtaSaFpsLock.exe`, a single file.
+This needs the .NET Framework 4.8.1 targeting pack. The output is `bin\Release\ExternalFrameLimiter.exe`, a single file.

@@ -3,7 +3,7 @@ using System.ComponentModel;
 using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
-namespace GtaSaFpsLock
+namespace ExternalFrameLimiter
 {
 	/// <summary>
 	/// A low-level keyboard hook: sees every key going down and up, whichever window has focus, and passes each

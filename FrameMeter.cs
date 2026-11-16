@@ -4,7 +4,7 @@ using System.Diagnostics;
 using System.Runtime.InteropServices;
 using System.Threading;
 
-namespace GtaSaFpsLock
+namespace ExternalFrameLimiter
 {
 	/// <summary>The frames of the last second, as measured from the game's frame counter.</summary>
 	struct FrameReading
