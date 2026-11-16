@@ -177,11 +177,11 @@ namespace ExternalFrameLimiter
 		public bool LimiterOn { get; private set; }
 
 		/// <summary>
-		/// While the menu's Frame Limiter is on: sets the cap and switches the frame delay off, and switches off the
-		/// limiter's vsync while the cap is above <paramref name="refreshRate"/>. While it is off: leaves the game as it is
-		/// without the tool (cap 30, the delay and vsync as the game has them). Writes only what differs.
+		/// While the menu's Frame Limiter is on: sets the cap, switches the frame delay off if <paramref name="removeDelay"/>,
+		/// and the limiter's vsync off if <paramref name="vsyncOff"/>. While it is off: leaves the game as it is without the
+		/// tool (cap 30, the delay and vsync as the game has them). Writes only what differs.
 		/// </summary>
-		public void Apply(int fps, int refreshRate)
+		public void Apply(int fps, bool vsyncOff, bool removeDelay)
 		{
 			if (Status != GameStatus.Found)
 				return;
@@ -197,8 +197,8 @@ namespace ExternalFrameLimiter
 					fps = GameFrameLimit;
 				if (limit != fps)
 					WriteInt(FrameLimitOffset, fps);
-				bool recognised = Set(NoFrameDelay, LimiterOn);
-				recognised &= Set(NoLimiterVsync, LimiterOn && fps > refreshRate);
+				bool recognised = Set(NoFrameDelay, LimiterOn && removeDelay);
+				recognised &= Set(NoLimiterVsync, LimiterOn && vsyncOff);
 				CodeRecognised = recognised;
 			}
 			catch (Exception)

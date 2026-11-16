@@ -1,6 +1,6 @@
 using System;
+using System.Diagnostics;
 using System.Drawing;
-using System.Runtime.InteropServices;
 using System.Windows.Forms;
 
 namespace ExternalFrameLimiter
@@ -8,8 +8,18 @@ namespace ExternalFrameLimiter
 	/// <summary>The window: the game's status, the target and the measured frame rate. Everything here runs on the UI thread.</summary>
 	sealed class MainForm : Form
 	{
-		const int HeldDefault = 30;
-		const int HeldWhenSetTo30 = 60;
+		enum Rate { Fps30, Fps60, Uncapped }
+
+		/// <summary>
+		/// The game's cap for each rate. With the 14 ms delay on, 60 is capped at 103: with vsync on a 60 Hz screen that
+		/// gives 60 on screen, where a cap of 60 gives about 43. Uncapped is 1000, not higher, because the game's
+		/// timers freeze above 1000 FPS.
+		/// </summary>
+		int Cap(Rate rate) => rate == Rate.Fps30 ? 30 : rate == Rate.Fps60 ? (removeDelay ? 60 : 103) : 1000;
+
+		string Name(Rate rate) => rate == Rate.Fps30 ? "30 FPS" : rate == Rate.Uncapped ? "Uncapped" : removeDelay ? "60 FPS" : "60 FPS (cap 103)";
+
+		const long F8HoldMs = 2000;
 
 		readonly GameMemory game = new GameMemory();
 		readonly FrameMeter meter;
@@ -22,35 +32,16 @@ namespace ExternalFrameLimiter
 		readonly Label measuredLabel = NewLabel();
 		readonly Label keysLabel = NewLabel();
 
-		int setting = 60;
-		int refreshRate = 60;
+		readonly Stopwatch clock = Stopwatch.StartNew();
 
-		[DllImport("user32.dll", CharSet = CharSet.Unicode)]
-		static extern bool EnumDisplaySettings(string device, int mode, ref DevMode devMode);
-
-		[StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
-		struct DevMode
-		{
-			[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string DeviceName;
-			public short SpecVersion, DriverVersion, Size, DriverExtra;
-			public int Fields, PositionX, PositionY, DisplayOrientation, DisplayFixedOutput;
-			public short Color, Duplex, YResolution, TTOption, Collate;
-			[MarshalAs(UnmanagedType.ByValTStr, SizeConst = 32)] public string FormName;
-			public short LogPixels;
-			public int BitsPerPel, PelsWidth, PelsHeight, DisplayFlags, DisplayFrequency;
-		}
-
-		/// <summary>The primary screen's refresh rate, or the last one read if Windows won't say.</summary>
-		int ReadRefreshRate()
-		{
-			var mode = new DevMode { Size = (short)Marshal.SizeOf(typeof(DevMode)) };
-			if (EnumDisplaySettings(null, -1, ref mode) && mode.DisplayFrequency > 1)
-				return mode.DisplayFrequency;
-			return refreshRate;
-		}
+		Rate setting = Rate.Fps60;
 		bool held;
+		bool removeDelay;
+		// When F8 went down, in ms on the clock, or -1 while it is up; and whether this hold has toggled the delay yet
+		long f8DownAt = -1;
+		bool f8Toggled;
 
-		int Target => held ? (setting == HeldDefault ? HeldWhenSetTo30 : HeldDefault) : setting;
+		Rate Target => held ? (setting == Rate.Fps30 ? Rate.Fps60 : Rate.Fps30) : setting;
 
 		public MainForm()
 		{
@@ -75,7 +66,7 @@ namespace ExternalFrameLimiter
 			layout.Controls.Add(keysLabel);
 			Controls.Add(layout);
 			keysLabel.ForeColor = SystemColors.GrayText;
-			keysLabel.Text = "F5: 30   F6: 60   F7: 120\nHold Num+: 30 (60 while set to 30)";
+			keysLabel.Text = "F5: 30   F6: 60   F7: uncapped\nHold F8 for 2 s: 14 ms delay on/off\nHold Num+: 30 (60 while set to 30)";
 
 			tray.Icon = Icon;
 			tray.Text = Text;
@@ -113,13 +104,24 @@ namespace ExternalFrameLimiter
 			switch (key)
 			{
 				case Keys.F5 when down:
-					setting = 30;
+					setting = Rate.Fps30;
 					break;
 				case Keys.F6 when down:
-					setting = 60;
+					setting = Rate.Fps60;
 					break;
 				case Keys.F7 when down:
-					setting = 120;
+					setting = Rate.Uncapped;
+					break;
+				case Keys.F8:
+					if (!down)
+					{
+						f8DownAt = -1;
+						f8Toggled = false;
+					}
+					else if (f8DownAt < 0)
+						f8DownAt = clock.ElapsedMilliseconds;
+					// Auto-repeat while held checks the time too, as does the timer
+					CheckF8Hold();
 					break;
 				case Keys.Add when down != held:
 					held = down;
@@ -127,17 +129,29 @@ namespace ExternalFrameLimiter
 				default:
 					return;
 			}
-			game.Apply(Target, refreshRate);
+			Apply();
 			ShowState();
 		}
+
+		/// <summary>Toggles the delay once F8 has been held for 2 seconds, once per hold.</summary>
+		void CheckF8Hold()
+		{
+			if (f8DownAt >= 0 && !f8Toggled && clock.ElapsedMilliseconds - f8DownAt >= F8HoldMs)
+			{
+				f8Toggled = true;
+				removeDelay = !removeDelay;
+			}
+		}
+
+		void Apply() => game.Apply(Cap(Target), Target == Rate.Uncapped, removeDelay);
 
 		void Tick()
 		{
 			try
 			{
 				game.Refresh();
-				refreshRate = ReadRefreshRate();
-				game.Apply(Target, refreshRate);
+				CheckF8Hold();
+				Apply();
 				ShowState();
 			}
 			catch (Exception e)
@@ -156,8 +170,8 @@ namespace ExternalFrameLimiter
 						status = "Frame Limiter is off in the game's menu: leaving the game alone";
 					else if (!game.CodeRecognised)
 						status = "Locked, but some of the game's code isn't 1.0's, so the frame delay or vsync was left in";
-					else if (Target > refreshRate)
-						status = $"Locked, vsync off (above the screen's {refreshRate} Hz)";
+					else if (Target == Rate.Uncapped)
+						status = "Uncapped, vsync off";
 					else
 						status = "Locked";
 					break;
@@ -175,7 +189,11 @@ namespace ExternalFrameLimiter
 				status += "\n" + hookError;
 			SetText(statusLabel, status);
 
-			SetText(targetLabel, held ? $"{Target} FPS   (Num+ held, set to {setting})" : $"{Target} FPS");
+			string target = held ? $"{Name(Target)}   (Num+ held, set to {Name(setting)})" : Name(Target);
+			target += removeDelay ? "\n14 ms delay off" : "\n14 ms delay on";
+			if (f8DownAt >= 0 && !f8Toggled)
+				target += removeDelay ? ": keep holding F8 to switch it on" : ": keep holding F8 to switch it off";
+			SetText(targetLabel, target);
 
 			FrameReading r = meter.Read();
 			SetText(measuredLabel, game.Status == GameStatus.Found && r.Frames > 0
