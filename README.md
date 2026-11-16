@@ -4,8 +4,8 @@ A small Windows tool that caps GTA San Andreas (PC 1.0) at an even 30, 60 or 120
 
 | Key | Frame rate |
 | --- | --- |
-| F5 | 30 (the setting at start) |
-| F6 | 60 |
+| F5 | 30 |
+| F6 | 60 (the setting at start) |
 | F7 | 120 |
 | Hold Num+ | 30 while held, or 60 if the setting is 30; letting go goes back to the setting |
 

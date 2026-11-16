@@ -22,7 +22,7 @@ namespace ExternalFrameLimiter
 		readonly Label measuredLabel = NewLabel();
 		readonly Label keysLabel = NewLabel();
 
-		int setting = 30;
+		int setting = 60;
 		int refreshRate = 60;
 
 		[DllImport("user32.dll", CharSet = CharSet.Unicode)]
